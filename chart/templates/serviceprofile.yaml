@@ -1,4 +1,3 @@
-{{- if not .Values.SingleNamespace }}
 ---
 ###
 ### Service Profile CRD
@@ -105,4 +104,3 @@ spec:
                                 type: object
                             not:
                               type: object
-{{- end }}

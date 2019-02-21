@@ -2,7 +2,6 @@ package cmd
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"os"
 
@@ -37,21 +36,14 @@ Only pod resources (aka pods, po) are supported.`,
 
   # get pods from namespace linkerd
   linkerd get pods --namespace linkerd`,
-		Args:      cobra.ExactArgs(1),
+		Args:      cobra.ExactValidArgs(1),
 		ValidArgs: []string{k8s.Pod},
 		RunE: func(cmd *cobra.Command, args []string) error {
-			if len(args) < 1 {
-				return errors.New("please specify a resource type")
-			}
-
-			if len(args) > 1 {
-				return errors.New("please specify only one resource type")
-			}
-
 			friendlyName := args[0]
 			resourceType, err := k8s.CanonicalResourceNameFromFriendlyName(friendlyName)
 
 			if err != nil || resourceType != k8s.Pod {
+				// we should never get here, as it's checked by cobra.ExactValidArgs
 				return fmt.Errorf("invalid resource type %s, valid types: %s", friendlyName, k8s.Pod)
 			}
 

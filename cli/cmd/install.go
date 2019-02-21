@@ -104,7 +104,7 @@ const (
 	grafanaTemplateName        = "templates/grafana.yaml"
 	serviceprofileTemplateName = "templates/serviceprofile.yaml"
 	caTemplateName             = "templates/ca.yaml"
-	proxyInjectorTemplateName  = "templates/proxy_injector.yaml"
+	proxyInjectorTemplateName  = "templates/proxy-injector.yaml"
 )
 
 func newInstallOptions() *installOptions {
@@ -122,11 +122,31 @@ func newInstallOptions() *installOptions {
 
 func newCmdInstall() *cobra.Command {
 	options := newInstallOptions()
-
 	cmd := &cobra.Command{
-		Use:   "install [flags]",
-		Short: "Output Kubernetes configs to install Linkerd",
-		Long:  "Output Kubernetes configs to install Linkerd.",
+		Use:       "install (admin|user) [flags]",
+		Args:      cobra.ExactValidArgs(1),
+		ValidArgs: []string{"admin", "user"},
+		Short:     "Output Kubernetes configs to install Linkerd",
+		Long: `Output Kubernetes configs to install Linkerd.
+
+This command provides Kubernetes configs necessary to perform a two-stage
+installation of the Linkerd control-plane. Installation is broken up into two
+stages by user privilege:
+  * Stage 1: admin - cluster-wide resources, including ClusterRoles, CRDs, and
+    Namespaces
+  * Stage 2: user - namespace-wide resources, including Deployments, Services,
+    ServiceAccounts, and ServiceProfiles
+`,
+		Example: `  # Default install.
+  linkerd install admin | kubectl apply -f -
+  linkerd install user | kubectl apply -f -
+
+  # Install Linkerd into a non-default namespace.
+  linkerd install admin -l linkerdtest | kubectl apply -f -
+  linkerd install user -l linkerdtest | kubectl apply -f -
+
+  # Install Linkerd with only namespace-wide privileges
+  linkerd install user --single-namespace -l myapp | kubectl apply -f -`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			config, err := validateAndBuildConfig(options)
 			if err != nil {
