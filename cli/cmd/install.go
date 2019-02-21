@@ -93,18 +93,12 @@ type installOptions struct {
 }
 
 const (
+	admin = "admin"
+	user  = "user"
+
 	prometheusProxyOutboundCapacity = 10000
 	defaultControllerReplicas       = 1
 	defaultHAControllerReplicas     = 3
-
-	nsTemplateName             = "templates/namespace.yaml"
-	controllerTemplateName     = "templates/controller.yaml"
-	webTemplateName            = "templates/web.yaml"
-	prometheusTemplateName     = "templates/prometheus.yaml"
-	grafanaTemplateName        = "templates/grafana.yaml"
-	serviceprofileTemplateName = "templates/serviceprofile.yaml"
-	caTemplateName             = "templates/ca.yaml"
-	proxyInjectorTemplateName  = "templates/proxy-injector.yaml"
 )
 
 func newInstallOptions() *installOptions {
@@ -153,7 +147,7 @@ stages by user privilege:
 				return err
 			}
 
-			return render(*config, os.Stdout, options)
+			return render(args[0], *config, os.Stdout, options)
 		},
 	}
 
@@ -258,7 +252,7 @@ func validateAndBuildConfig(options *installOptions) (*installConfig, error) {
 	}, nil
 }
 
-func render(config installConfig, w io.Writer, options *installOptions) error {
+func render(stage string, config installConfig, w io.Writer, options *installOptions) error {
 	// Render raw values and create chart config
 	rawValues, err := yaml.Marshal(config)
 	if err != nil {
@@ -268,14 +262,29 @@ func render(config installConfig, w io.Writer, options *installOptions) error {
 
 	files := []*chartutil.BufferedFile{
 		{Name: chartutil.ChartfileName},
-		{Name: nsTemplateName},
-		{Name: controllerTemplateName},
-		{Name: serviceprofileTemplateName},
-		{Name: webTemplateName},
-		{Name: prometheusTemplateName},
-		{Name: grafanaTemplateName},
-		{Name: caTemplateName},
-		{Name: proxyInjectorTemplateName},
+	}
+
+	if stage == admin {
+		files = append(files, []*chartutil.BufferedFile{
+			{Name: "templates/namespace.yaml"},
+			{Name: "templates/serviceprofile.yaml"},
+			{Name: "templates/ca-admin.yaml"},
+			{Name: "templates/controller-admin.yaml"},
+			{Name: "templates/prometheus-admin.yaml"},
+			{Name: "templates/proxy-injector-admin.yaml"},
+		}...)
+	} else if stage == user {
+		files = append(files, []*chartutil.BufferedFile{
+			{Name: "templates/grafana.yaml"},
+			{Name: "templates/web.yaml"},
+			{Name: "templates/ca-user.yaml"},
+			{Name: "templates/controller-user.yaml"},
+			{Name: "templates/prometheus-user.yaml"},
+			{Name: "templates/proxy-injector-user.yaml"},
+		}...)
+	} else {
+		// we should never get here
+		return fmt.Errorf("unknown stage: %s", stage)
 	}
 
 	// Read templates into bytes

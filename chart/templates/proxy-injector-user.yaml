@@ -1,7 +1,7 @@
 {{ if .Values.ProxyAutoInjectEnabled }}
 ---
 ###
-### Proxy Injector
+### Proxy Injector (namespace-wide components)
 ###
 ---
 kind: Deployment
